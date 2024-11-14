@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grocery List</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #1f1a36;
+            color: #e6e6e6;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            background-color: #4b306f;
+            width: 300px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 3px 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .sidebar h2 {
+            color: #d1a3ff;
+            text-align: center;
+            font-size: 1.5rem;
+            margin: 0;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        input[type="number"] {
+            padding: 10px;
+            background: #623983;
+            color: #e6e6e6;
+            border: 1px solid #8a60b3;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+
+        input::placeholder {
+            color: #bb88cc;
+        }
+
+        input:focus {
+            border-color: #d1a3ff;
+            outline: none;
+            box-shadow: 0 0 8px rgba(209, 163, 255, 0.5);
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #d1a3ff;
+            font-size: 2rem;
+            margin: 0;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        .controls select,
+        .controls button {
+            padding: 10px;
+            background: #623983;
+            color: #e6e6e6;
+            border: 1px solid #8a60b3;
+            border-radius: 5px;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        select:focus,
+        button:focus {
+            border-color: #d1a3ff;
+            outline: none;
+            box-shadow: 0 0 8px rgba(209, 163, 255, 0.5);
+        }
+
+        .grocery-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            overflow-y: auto;
+            max-height: 60vh;
+        }
+
+        .grocery-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #4b306f;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: background 0.3s;
+        }
+
+        .grocery-item:hover {
+            background: #563a78;
+        }
+
+        .grocery-item input[type="checkbox"] {
+            margin-right: 10px;
+            accent-color: #d1a3ff;
+        }
+
+        .actions button {
+            margin-left: 8px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.85rem;
+            background-color: #8a60b3;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        .actions button:hover {
+            background-color: #a978c4;
+            transform: scale(1.05);
+        }
+
+        .actions .delete {
+            background-color: #b33b5e;
+        }
+
+        .actions .delete:hover {
+            background-color: #d94a7e;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="sidebar">
+        <h2>Add New Item</h2>
+        <div class="input-group">
+            <input type="text" id="productTitle" placeholder="Product Name">
+            <input type="date" id="deadline">
+            <input type="number" id="price" placeholder="Price">
+            <button onclick="addProduct()">Add Product</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <h1>Grocery List</h1>
+
+        <div class="controls">
+            <select id="sortOptions" onchange="sortList()">
+                <option value="name">Sort by Name</option>
+                <option value="deadline">Sort by Deadline</option>
+                <option value="price">Sort by Price</option>
+            </select>
+            <button onclick="placeOrder()">Place Order</button>
+        </div>
+
+        <ul id="groceryList" class="grocery-list"></ul>
+    </div>
+
+    <script>
+        let groceryItems = [];
+
+        function addProduct() {
+            const title = document.getElementById("productTitle").value;
+            const deadline = document.getElementById("deadline").value;
+            const price = parseFloat(document.getElementById("price").value);
+
+            if (!title || !deadline || isNaN(price)) {
+                alert("Please fill out all fields.");
+                return;
+            }
+
+            groceryItems.push({
+                title: title,
+                deadline: deadline,
+                price: price,
+                bought: false
+            });
+
+            renderList();
+            clearInputs();
+        }
+
+        function renderList() {
+            const list = document.getElementById("groceryList");
+            list.innerHTML = "";
+
+            groceryItems.forEach((item, index) => {
+                const listItem = document.createElement("li");
+                listItem.className = "grocery-item";
+
+                listItem.innerHTML = `
+        <div>
+          <input type="checkbox" onchange="toggleBought(${index})" ${item.bought ? 'checked' : ''}>
+          <strong>${item.title}</strong> - $${item.price.toFixed(2)} - Due: ${item.deadline}
+        </div>
+        <div class="actions">
+          <button class="edit" onclick="editProduct(${index})">Edit</button>
+          <button class="delete" onclick="removeProduct(${index})">Remove</button>
+        </div>
+      `;
+
+                list.appendChild(listItem);
+            });
+        }
+
+        function clearInputs() {
+            document.getElementById("productTitle").value = "";
+            document.getElementById("deadline").value = "";
+            document.getElementById("price").value = "";
+        }
+
+        function toggleBought(index) {
+            groceryItems[index].bought = !groceryItems[index].bought;
+            renderList();
+        }
+
+        function removeProduct(index) {
+            groceryItems.splice(index, 1);
+            renderList();
+        }
+
+        function editProduct(index) {
+            const item = groceryItems[index];
+            document.getElementById("productTitle").value = item.title;
+            document.getElementById("deadline").value = item.deadline;
+            document.getElementById("price").value = item.price;
+
+            removeProduct(index);
+        }
+
+        function sortList() {
+            const sortBy = document.getElementById("sortOptions").value;
+
+            groceryItems.sort((a, b) => {
+                if (sortBy === "name") {
+                    return a.title.localeCompare(b.title);
+                } else if (sortBy === "deadline") {
+                    return new Date(a.deadline) - new Date(b.deadline);
+                } else if (sortBy === "price") {
+                    return a.price - b.price;
+                }
+            });
+
+            renderList();
+        }
+
+        function placeOrder() {
+            const orderedItems = groceryItems.filter(item => item.bought);
+            if (orderedItems.length === 0) {
+                alert("No items to place an order.");
+            } else {
+                alert(`Order placed for ${orderedItems.length} items!`);
+                groceryItems = groceryItems.filter(item => !item.bought);
+                renderList();
+            }
+        }
+
+        renderList();
+    </script>
+
+</body>
+
+</html>
